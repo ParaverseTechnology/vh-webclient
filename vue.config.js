@@ -6,14 +6,5 @@ module.exports = {
     // disable map
     productionSourceMap: false,
     outputDir: 'dist/',
-    configureWebpack: config => {
-        config.module.rules.push({
-            test: /\.worker\.js$/,
-            use: {
-                loader: 'worker-loader',
-                options: { inline: "fallback" }
-            }
-        })
-    },
     parallel: false,
 }
