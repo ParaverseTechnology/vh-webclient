@@ -3,7 +3,9 @@
     <div class="ui" v-if="showUi">
       <!-- chat -->
       <div class="chat">
+        <!-- 清理 -->
         <div class="func"><font-awesome-icon :icon="['fas', 'trash']" size="lg" @click="clearContent"/></div>
+        <!-- 聊天内容 -->
         <div class="content">
           <div v-for="(content, index) in chatContent" :key="index">
             <div class="content-vm" v-if="content.type == 'vm'">
@@ -17,10 +19,13 @@
           </div>
           <div ref="hiddenScroller" style="height: 50px"></div>
         </div>
+        <!-- 输入文本 -->
         <div class="input">
-          <div class="recoder">
+          <!-- 录音按钮 -->
+          <div :class="recodeIconClass" @mousedown="startRecode" @mouseup="stopRecode" @mouseleave="stopRecode">
             <font-awesome-icon :icon="['fas', 'microphone']" size="3x" />
           </div>
+          <!-- 文本输入 -->
           <div class="textInput">
             <input v-model="inputValue" @focus="onInputFocus" @blur="onInputBlur" placeholder="hi,say something to me..." />
           </div>
@@ -52,6 +57,10 @@
 
 <script>
 import { CreateLarkSRClientFromeAPI } from "larksr_websdk";
+import Recorderx, { 
+  // ENCODE_TYPE,
+  RECORDER_STATE,
+} from "recorderx";
 
 const DataChannelType = {
     // ⽂本输⼊ 
@@ -73,9 +82,82 @@ export default {
       larksr: null,
       inputValue: '',
       showUi: false,
+      recoder: null,
+      recodeTimer: null,
     };
   },
+  computed: {
+    recodeIconClass() {
+      return this.recoder !== null ? 'recoding recoder' : 'recoder';
+    },
+  },
   methods: {
+    // 开始录制
+    startRecode() {
+      console.log('start recode');
+      this.recoder = new Recorderx();
+      // start recorderx
+      this.recoder.start()
+        .then(() => {
+          console.log("start recording");
+          this.sendRecoderBuffer(0x1);
+          this.recodeTimeout();
+          this.userInput('recoding....');
+        })
+        .catch(error => {
+          console.log("Recording failed.", error);
+        });
+    },
+    stopRecode() {
+      if (this.recodeTimer) {
+        window.clearInterval(this.recodeTimer);
+        this.recodeTimer = null;
+      }
+      // pause recorderx
+      if (this.recoder && this.recoder.state == RECORDER_STATE.RECORDING) {
+        console.log('stop recode', this.recoder.state, this.recoder.ctx);
+        this.sendRecoderBuffer(0x3);
+        this.recoder?.pause();
+        this.recoder?.clear();
+        this.userInput('recoded');
+      }
+      this.recoder = null;
+    },
+    pauseRecode() {
+      // pause recorderx
+      this.recoder?.pause();
+    },
+    recodeTimeout() {
+      this.recodeTimer = setInterval(() => {
+          // recodeing
+          console.log('recoder update...');
+          this.sendRecoderBuffer(0x2);
+      }, 1000);
+    },
+    // 0x1---------音频输入开始
+    // 0x2---------音频输入中(用户录音时循环发送，初步定义为 1s 中切片一次即发送一次音频)
+    // 0x3---------音频输入结束(用户本次输入结束)
+    sendRecoderBuffer(state) {
+      // get recoder
+      if (this.recoder && this.recoder.state == RECORDER_STATE.RECORDING) {
+          let buffer = this.recoder.getRecord({
+              encodeTo: "wav",
+              compressible: true,
+          });
+          console.log('send recode ', state, buffer, buffer.arrayBuffer());
+
+          const blob = new Blob([new Uint8Array([0x0, 0x0, 0x0, state]), buffer]);
+          blob.arrayBuffer()
+          .then((value) => {
+            console.log("send to datachannel buffers", value);
+            // send array buffer to datachannel.
+            this.larksr?.sendBinaryToDataChannel(value);
+          })
+          .catch((e) => {
+            console.warn('connect buffer failed', e);
+          })
+      }
+    },
     // 处理文字输入输出
     vmOutput(text) {
       this.chatContent.push({
@@ -236,6 +318,10 @@ export default {
         alert(JSON.stringify(e));
       });
   },
+  beforeUnmount() {
+    this.larksr.app.disConnect();
+    this.larksr = null;
+  },
 };
 </script>
 
@@ -286,6 +372,10 @@ export default {
     align-content: center;
     justify-content: space-around;
     padding: 10px 0;
+}
+
+.chat .input .recoding {
+  color: red;
 }
 
 .chat .input .textInput {
