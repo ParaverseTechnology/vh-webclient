@@ -238,7 +238,7 @@ export default {
         rootElement: this.$refs["appContainer"],
         // 服务器地址,实际使用中填写您的服务器地址
         // 如：http://222.128.6.137:8181/
-        serverAddress: "http://222.128.6.137:8181/",
+        serverAddress: "https://cloudlark.pingxingyun.com:8180/",
         // 授权码
         authCode: "2ad9f9a6aa454a11df274e900613510b",
         // 视频缩放模式，默认保留宽高比，不会拉伸并完整显示在容器中
