@@ -63,7 +63,10 @@ import Recorderx, {
 } from "recorderx";
 
 const DataChannelType = {
-    // ⽂本输⼊ 
+  // 初始化配置，包括头发，⾐服，背景等。
+  // 在收到初始化配置之后再显⽰虚拟⼈
+  InitConfig: 0,
+  // ⽂本输⼊ 
   TextInput: 1, 
   // 视⻆控制 
   CameraControl: 2, 
@@ -190,6 +193,22 @@ export default {
       console.log('onInputBlur');
       this.larksr?.op.setKeyboardEnable(true);
     },
+    // 发送初始化配置给服务端
+    // 初始化配置（新增）包括头发，⾐服，背景等。在收到初始化配置之后再显⽰虚拟⼈
+    sendInitConfig() {
+      this.larksr?.sendTextToDataChannel(JSON.stringify({
+          type: DataChannelType.InitConfig, 
+          data: {
+            // 预制背景 1...,
+            background: 1,
+            // 预制头发 1...
+            hair: 1,
+            // 预制⾐服 1...
+            clothing: 1,
+            // 其他预制项⽬...
+          }
+      }));
+    },
     // 发送文本给云端应用
     sendText() {
       if (!this.inputValue) {
@@ -198,7 +217,15 @@ export default {
       }
       this.larksr?.sendTextToDataChannel(JSON.stringify({
           type: DataChannelType.TextInput, 
-          data: this.inputValue
+          data: {
+            // 语⾳⽣成的⻆⾊。 1 ==》 客⼾端侧 2 ===》 虚拟⼈侧 
+            // 当⽤⼾输⼊的情况下 role 恒定为 1，表⽰客⼾侧 
+            // 云端解析的情况下分两种 
+            // 云端发送给客⼾端的⽂字为解析客⼾端语⾳ role 为 1，表⽰客⼾侧 
+            // 云端发送给客⼾端的⽂字为虚拟⼈语⾳内容 role 为 2, 表⽰虚拟⼈侧
+            role: 1,
+            text: this.inputValue,
+          }
       }));
       this.userInput(this.inputValue);
       this.inputValue = "";
@@ -283,6 +310,8 @@ export default {
           console.log("datachannel open",  e);
           // send client size
           this.clientSize(this.larksr.screenState.viewPort.width, this.larksr.screenState.viewPort.height);
+
+          this.sendInitConfig();
         });
         this.larksr.on("datachanneltext", (e) => {
           if (!e.data) {
