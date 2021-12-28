@@ -160,6 +160,8 @@ export default {
           .catch((e) => {
             console.warn('connect buffer failed', e);
           })
+
+          this.recoder.clear();
       }
     },
     // 处理文字输入输出
