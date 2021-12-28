@@ -128,7 +128,10 @@ export default {
       this.recoder?.pause();
     },
     recodeTimeout() {
-      this.recodeTimer = setInterval(() => {
+      if (this.recodeTimer) {
+        window.clearInterval(this.recodeTimer);
+      }
+      this.recodeTimer = window.setInterval(() => {
           // recodeing
           console.log('recoder update...');
           this.sendRecoderBuffer(0x2);
@@ -149,9 +152,10 @@ export default {
           const blob = new Blob([new Uint8Array([0x0, 0x0, 0x0, state]), buffer]);
           blob.arrayBuffer()
           .then((value) => {
-            console.log("send to datachannel buffers", value);
+            const uint8array = new Uint8Array(value);
+            console.log("send to datachannel buffers", uint8array);
             // send array buffer to datachannel.
-            this.larksr?.sendBinaryToDataChannel(value);
+            this.larksr?.sendBinaryToDataChannel(uint8array);
           })
           .catch((e) => {
             console.warn('connect buffer failed', e);
