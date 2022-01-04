@@ -37,9 +37,17 @@
       <!-- control groups -->
       <div class="controls">
         <div class="control-group">
+          <Slider v-on:change="changeAngle" :max="180" :min="-180" />
+        </div>
+        <div class="control-group">
           <button @click="changeZoom(0)">全身</button>
           <button @click="changeZoom(50)">半身</button>
           <button @click="changeZoom(100)">特写</button>
+        </div>
+        <div class="control-group">
+          <button @click="changeAlign(0)">对齐左</button>
+          <button @click="changeAlign(1)">对齐中</button>
+          <button @click="changeAlign(2)">对齐右</button>
         </div>
         <div class="control-group">
           <button @click="changeBg(1)">背景1</button>
@@ -61,6 +69,7 @@ import Recorderx, {
   // ENCODE_TYPE,
   RECORDER_STATE,
 } from "recorderx";
+import Slider from './components/slider/slider.vue';
 
 const DataChannelType = {
   // 初始化配置，包括头发，⾐服，背景等。
@@ -78,7 +87,9 @@ const DataChannelType = {
 
 export default {
   name: "App",
-  components: {},
+  components: {
+    Slider,
+  },
   data() {
     return {
       chatContent: [ { type: 'vm', text: 'hello', }, ],
@@ -87,6 +98,14 @@ export default {
       showUi: false,
       recoder: null,
       recodeTimer: null,
+      // 方位角(angle) -180°（左） 到 180°（右）, 0 为正前方)
+      // 放大(zoom) 0 - 100 0 最小全身, 100 脸部特写
+      // 对齐（align） 0 在屏幕最左边 1 在屏幕居中 2 在屏幕最右边
+      savedCamera: {
+        align: 1,
+        zoom: 50,
+        angle: 0
+      },
     };
   },
   computed: {
@@ -241,14 +260,28 @@ export default {
       }));
     },
     // 切换摄像机角度
-    changeZoom(zoom) {
+    changeAngle(angle) {
+      // console.log('changeAngle', angle);
+      this.savedCamera.angle = angle;
       this.larksr?.sendTextToDataChannel(JSON.stringify({
           type: DataChannelType.CameraControl, 
-          data: {
-            align: 0,
-            zoom: zoom,
-            angle: 0
-          }
+          data: this.savedCamera,
+      }));
+    },
+    // 切换摄像机缩放
+    changeZoom(zoom) {
+      this.savedCamera.zoom = zoom;
+      this.larksr?.sendTextToDataChannel(JSON.stringify({
+          type: DataChannelType.CameraControl, 
+          data: this.savedCamera,
+      }));
+    },
+    // 切换摄像机位置
+    changeAlign(align) {
+      this.savedCamera.align = align;
+      this.larksr?.sendTextToDataChannel(JSON.stringify({
+          type: DataChannelType.CameraControl, 
+          data: this.savedCamera,
       }));
     },
     // 客户端大小
@@ -271,7 +304,8 @@ export default {
         rootElement: this.$refs["appContainer"],
         // 服务器地址,实际使用中填写您的服务器地址
         // 如：http://222.128.6.137:8181/
-        serverAddress: "https://cloudlark.pingxingyun.com:8180/",
+        // serverAddress: "https://cloudlark.pingxingyun.com:8180/",
+        serverAddress: "http://222.128.6.137:8181/",
         // 授权码
         authCode: "授权码",
         // 视频缩放模式，默认保留宽高比，不会拉伸并完整显示在容器中
