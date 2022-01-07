@@ -366,7 +366,15 @@ export default {
           }
           switch (data.type) {
             case DataChannelType.TextInput:
-              this.vmOutput(data.data);
+              if (data.data.role) {
+                if (data.data.role === 1) {
+                  this.userInput(data.data.text);  
+                } else {
+                  this.vmOutput(data.data.text);  
+                }
+              } else {
+                this.vmOutput(data.data);
+              }
               break;
             default:
               console.log('unsupport data type', data);
