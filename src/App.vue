@@ -64,11 +64,7 @@
 </template>
 
 <script>
-import { CreateLarkSRClientFromeAPI } from "larksr_websdk";
-import Recorderx, { 
-  // ENCODE_TYPE,
-  RECORDER_STATE,
-} from "recorderx";
+import { LarkSR, LoadAppliParamsFromUrl } from "larksr_websdk";
 import Slider from './components/slider/slider.vue';
 
 const DataChannelType = {
@@ -92,7 +88,7 @@ export default {
   },
   data() {
     return {
-      chatContent: [ { type: 'vm', text: 'hello', }, ],
+      chatContent: [],
       larksr: null,
       inputValue: '',
       showUi: false,
@@ -117,95 +113,46 @@ export default {
     // 开始录制
     startRecode() {
       console.log('start recode');
-      this.recoder = new Recorderx();
-      // start recorderx
-      this.recoder.start()
-        .then(() => {
-          console.log("start recording");
-          this.sendRecoderBuffer(0x1);
-          this.recodeTimeout();
-          this.userInput('recoding....');
-        })
-        .catch(error => {
-          console.log("Recording failed.", error);
-        });
+      this.larksr.startAiDmVoiceInput();
     },
     stopRecode() {
-      if (this.recodeTimer) {
-        window.clearInterval(this.recodeTimer);
-        this.recodeTimer = null;
-      }
-      // pause recorderx
-      if (this.recoder && this.recoder.state == RECORDER_STATE.RECORDING) {
-        console.log('stop recode', this.recoder.state, this.recoder.ctx);
-        this.sendRecoderBuffer(0x3);
-        this.recoder?.pause();
-        this.recoder?.clear();
-        this.userInput('recoded');
-      }
-      this.recoder = null;
+      console.log('stop recode');
+      this.larksr.stopAiDmVoiceInput();
     },
     pauseRecode() {
-      // pause recorderx
-      this.recoder?.pause();
-    },
-    recodeTimeout() {
-      if (this.recodeTimer) {
-        window.clearInterval(this.recodeTimer);
-      }
-      this.recodeTimer = window.setInterval(() => {
-          // recodeing
-          console.log('recoder update...');
-          this.sendRecoderBuffer(0x2);
-      }, 1000);
-    },
-    // 0x1---------音频输入开始
-    // 0x2---------音频输入中(用户录音时循环发送，初步定义为 1s 中切片一次即发送一次音频)
-    // 0x3---------音频输入结束(用户本次输入结束)
-    sendRecoderBuffer(state) {
-      // get recoder
-      if (this.recoder && this.recoder.state == RECORDER_STATE.RECORDING) {
-          let buffer = this.recoder.getRecord({
-              encodeTo: "wav",
-              compressible: true,
-          });
-          console.log('send recode ', state, buffer, buffer.arrayBuffer());
-
-          const blob = new Blob([new Uint8Array([0x0, 0x0, 0x0, state]), buffer]);
-          blob.arrayBuffer()
-          .then((value) => {
-            const uint8array = new Uint8Array(value);
-            console.log("send to datachannel buffers", uint8array);
-            // send array buffer to datachannel.
-            this.larksr?.sendBinaryToDataChannel(uint8array);
-          })
-          .catch((e) => {
-            console.warn('connect buffer failed', e);
-          })
-
-          this.recoder.clear();
-      }
+      this.larksr.stopAiDmVoiceInput();
     },
     // 处理文字输入输出
-    vmOutput(text) {
+    vmOutput(id, text) {
       this.chatContent.push({
+        id,
         type: 'vm',
         text,
-      })
+      });
       this.$refs.hiddenScroller.scrollIntoView({behavior: "smooth"});
     },
-    userInput(text) {
-      this.chatContent.push({
-        type: 'user',
-        text,
-      });
+    userInput(id, text) {
+      let found = false;
+      for (let i = this.chatContent.length - 1; i >= 0; i--) {
+        if (this.chatContent[i].id == id) {
+          this.chatContent[i].text = text;
+          found = true;
+        }
+      }
+      if (!found) {
+        this.chatContent.push({
+          id,
+          type: 'user',
+          text,
+        });
+      }
       this.$refs.hiddenScroller.scrollIntoView({behavior: "smooth"});
     },
     clearContent() {
       this.chatContent = [];
     },
     onInputFocus() {
-      console.log('onInputFocus');
+      console.log('onInputFocus', this.larksr.op.setKeyboardEnable);
       this.larksr?.op.setKeyboardEnable(false);
     },
     onInputBlur() {
@@ -234,19 +181,8 @@ export default {
         console.log('input empty');
         return;
       }
-      this.larksr?.sendTextToDataChannel(JSON.stringify({
-          type: DataChannelType.TextInput, 
-          data: {
-            // 语⾳⽣成的⻆⾊。 1 ==》 客⼾端侧 2 ===》 虚拟⼈侧 
-            // 当⽤⼾输⼊的情况下 role 恒定为 1，表⽰客⼾侧 
-            // 云端解析的情况下分两种 
-            // 云端发送给客⼾端的⽂字为解析客⼾端语⾳ role 为 1，表⽰客⼾侧 
-            // 云端发送给客⼾端的⽂字为虚拟⼈语⾳内容 role 为 2, 表⽰虚拟⼈侧
-            role: 1,
-            text: this.inputValue,
-          }
-      }));
-      this.userInput(this.inputValue);
+      const id = this.larksr.aiDmTextInput(this.inputValue);
+      this.userInput(id, this.inputValue);
       this.inputValue = "";
     },
     // 发送控制指令到云端
@@ -298,102 +234,94 @@ export default {
     }
   },
   mounted() {
-    // 直接调用进入应用接口创建实例，自动配置连接云端资源
-    CreateLarkSRClientFromeAPI(
-      {
-        rootElement: this.$refs["appContainer"],
-        // 服务器地址,实际使用中填写您的服务器地址
-        // 如：http://222.128.6.137:8181/
-        // serverAddress: "https://cloudlark.pingxingyun.com:8180/",
-        serverAddress: "http://222.128.6.137:8181/",
-        // 授权码
-        authCode: "授权码",
-        // 视频缩放模式，默认保留宽高比，不会拉伸并完整显示在容器中
-        scaleMode: "contain",
-        // 0 -》 用户手动触发, 1 -》 首次点击进入触发, 2 -》 每次点击触发
-        fullScreenMode: 0,
-        // 测试载入背景图
-        loadingBgUrl: "https://home-obs.pingxingyun.com/homePage_4_0/bg.jpg",
-      },
-      { appliId: "814071627896586240" }
-    )
-      .then((larksr) => {
-        this.larksr = larksr;
-        this.larksr.start();
-        // 监听连接成功事件
-        this.larksr.on("connect", (e) => {
-          console.log("LarkSRClientEvent CONNECT", e);
-        });
-        this.larksr.on("gotremotesteam", (e) => {
-          console.log("LarkSRClientEvent gotremotesteam", e);
-        });
-        this.larksr.on("meidaloaded", (e) => {
-          console.log("LarkSRClientEvent meidaloaded", e);
-          this.showUi = true;
-        });
-        this.larksr.on("mediaplaysuccess", (e) => {
-          console.log("LarkSRClientEvent mediaplaysuccess", e);
-        });
-        this.larksr.on("mediaplayfailed", (e) => {
-          console.log("LarkSRClientEvent mediaplayfailed", e);
-        });
-        this.larksr.on("meidaplaymute", (e) => {
-          console.log("LarkSRClientEvent meidaplaymute", e);
-        });
-        this.larksr.on("datachannelopen", (e) => {
-          console.log("datachannel open",  e);
-          // send client size
-          this.clientSize(this.larksr.screenState.viewPort.width, this.larksr.screenState.viewPort.height);
-
-          this.sendInitConfig();
-        });
-        this.larksr.on("datachanneltext", (e) => {
-          if (!e.data) {
-            return;
-          }
-          let data;
-          try {
-            data = JSON.parse(e.data);
-          } catch (jsonerror) {
-            console.log('parse message failed.', e.data);
-            // 暂时将文本直接作为输出
-            this.vmOutput(e.data);
-            return;
-          }
-          if (typeof(data) == 'number') {
-            this.vmOutput(e.data);
-            return;
-          }
-          switch (data.type) {
-            case DataChannelType.TextInput:
-              if (data.data.role) {
-                if (data.data.role === 1) {
-                  this.userInput(data.data.text);  
-                } else {
-                  this.vmOutput(data.data.text);  
-                }
-              } else {
-                this.vmOutput(data.data);
-              }
-              break;
-            default:
-              console.log('unsupport data type', data);
-              break;
-          }
-        });
-        console.log("load appli success", larksr);
-        this.larksr.on("error", (e) => {
-          console.error("LarkSRClientEvent error", e);
-          alert(JSON.stringify(e.message));
-        });
-        this.larksr.on("info", (e) => {
-          console.log("LarkSRClientEvent info", e);
-        });
-      })
-      .catch((e) => {
-        console.log("load appli failed", e);
-        alert(JSON.stringify(e));
+      const larksr = new LarkSR({
+          rootElement: this.$refs["appContainer"],
+          // 服务器地址,实际使用中填写您的服务器地址
+          // 如：http://222.128.6.137:8181/
+          // serverAddress: "https://cloudlark.pingxingyun.com:8180/",
+          // serverAddress: "http://222.128.6.137:8181/",
+          serverAddress: "服务器地址,实际使用中填写您的服务器地址",
+          // serverAddress: "http://cloudlark.pingxingyun.com:8585",
+          // 授权码
+          authCode: "SDK的授权码",
+          // 视频缩放模式，默认保留宽高比，不会拉伸并完整显示在容器中
+          scaleMode: "contain",
+          // 0 -》 用户手动触发, 1 -》 首次点击进入触发, 2 -》 每次点击触发
+          fullScreenMode: 0,
+          // 测试载入背景图
+          loadingBgUrl: "https://home-obs.pingxingyun.com/homePage_4_0/bg.jpg",
+          // logLevel: 'info',
       });
+      console.log('larksr', larksr, LoadAppliParamsFromUrl());
+      // larksr.setAppliParams(LoadAppliParamsFromUrl());
+      // larksr.start();
+      larksr.connect({
+         appliId: '要调试的appid，在系统后台查看',
+      });
+      // 监听连接成功事件
+      larksr.on("connect", (e) => {
+        console.log("LarkSRClientEvent CONNECT", e);
+      });
+      larksr.on("gotremotesteam", (e) => {
+        console.log("LarkSRClientEvent gotremotesteam", e);
+      });
+      larksr.on("meidaloaded", (e) => {
+        console.log("LarkSRClientEvent meidaloaded", e);
+        this.showUi = true;
+      });
+      larksr.on("mediaplaysuccess", (e) => {
+        console.log("LarkSRClientEvent mediaplaysuccess", e);
+      });
+      larksr.on("mediaplayfailed", (e) => {
+        console.log("LarkSRClientEvent mediaplayfailed", e);
+      });
+      larksr.on("meidaplaymute", (e) => {
+        console.log("LarkSRClientEvent meidaplaymute", e);
+      });
+      larksr.on("datachannelopen", (e) => {
+        console.log("datachannel open",  e);
+        // send client size
+        this.clientSize(larksr.screenState.viewPort.width, larksr.screenState.viewPort.height);
+
+        this.sendInitConfig();
+      });
+
+      larksr.on("datachanneltext", (e) => {
+        console.log('datachanneltext', e);
+      });
+
+      console.log("load appli success", this.larksr);
+
+      larksr.on("error", (e) => {
+        console.error("LarkSRClientEvent error", e);
+        alert(JSON.stringify(e.message));
+      });
+
+      larksr.on("info", (e) => {
+        console.log("LarkSRClientEvent info", e);
+      });
+
+      larksr.on('aivoicestatus', (e) => {
+        console.log('aivoicestatus', e);
+        this.vmOutput(0, JSON.stringify(e.data));
+      });
+
+      larksr.on('aivoiceasrresult', (e) => {
+        console.log('aivoiceasrresult', e.data);
+        this.userInput(e.data.voiceId, e.data.text);
+      });
+
+      larksr.on('aivoicedmresult', (e) => {
+        try {
+          let res = JSON.parse(e.data.text);
+          console.log('aivoicedmresult', res);
+          this.vmOutput(e.data.voiceId, res.dm.nlg);
+        } catch(e) {
+          console.warn('parse aivoicedmresult failed', e.data);
+        }
+      });
+
+      this.larksr = larksr;
   },
   beforeUnmount() {
     this.larksr.app.disConnect();
