@@ -102,6 +102,7 @@ export default {
         zoom: 50,
         angle: 0
       },
+      meidaplaymute: false,
     };
   },
   computed: {
@@ -113,6 +114,10 @@ export default {
     // 开始录制
     startRecode() {
       console.log('start recode');
+      if (this.meidaplaymute) {
+        this.larksr?.videoComponent.sountPlayout();
+        this.meidaplaymute = false;
+      }
       this.larksr.startAiDmVoiceInput();
     },
     stopRecode() {
@@ -177,6 +182,10 @@ export default {
     },
     // 发送文本给云端应用
     sendText() {
+      if (this.meidaplaymute) {
+        this.larksr?.videoComponent.sountPlayout();
+        this.meidaplaymute = false;
+      }
       if (!this.inputValue) {
         console.log('input empty');
         return;
@@ -219,6 +228,7 @@ export default {
           type: DataChannelType.CameraControl, 
           data: this.savedCamera,
       }));
+      console.log('send align ', this.savedCamera);
     },
     // 客户端大小
     clientSize(width, height) {
@@ -234,16 +244,16 @@ export default {
     }
   },
   mounted() {
-      const larksr = new LarkSR({
+     const larksr = new LarkSR({
           rootElement: this.$refs["appContainer"],
           // 服务器地址,实际使用中填写您的服务器地址
           // 如：http://222.128.6.137:8181/
           // serverAddress: "https://cloudlark.pingxingyun.com:8180/",
           // serverAddress: "http://222.128.6.137:8181/",
-          serverAddress: "服务器地址,实际使用中填写您的服务器地址",
+          serverAddress: "https://cloudlark.pingxingyun.com:8586/",
           // serverAddress: "http://cloudlark.pingxingyun.com:8585",
-          // 授权码
-          authCode: "SDK的授权码",
+          // SDK授权码，可在开发者平台申请 https://www.pingxingyun.com/console
+          authCode: "SDK授权码",
           // 视频缩放模式，默认保留宽高比，不会拉伸并完整显示在容器中
           scaleMode: "contain",
           // 0 -》 用户手动触发, 1 -》 首次点击进入触发, 2 -》 每次点击触发
@@ -256,7 +266,7 @@ export default {
       // larksr.setAppliParams(LoadAppliParamsFromUrl());
       // larksr.start();
       larksr.connect({
-         appliId: '要调试的appid，在系统后台查看',
+         appliId: '949293606043123712',
       });
       // 监听连接成功事件
       larksr.on("connect", (e) => {
@@ -277,17 +287,25 @@ export default {
       });
       larksr.on("meidaplaymute", (e) => {
         console.log("LarkSRClientEvent meidaplaymute", e);
+        this.meidaplaymute = true;
       });
       larksr.on("datachannelopen", (e) => {
         console.log("datachannel open",  e);
         // send client size
         this.clientSize(larksr.screenState.viewPort.width, larksr.screenState.viewPort.height);
-
         this.sendInitConfig();
       });
 
       larksr.on("datachanneltext", (e) => {
-        console.log('datachanneltext', e);
+        try {
+          const cmd = JSON.parse(e.data);
+          console.log('datachannel cmd', cmd);
+          if (cmd.type == 4 && cmd.data.text == 'PROJECT_READY') {
+            this.changeAlign(0);
+          }
+        } catch(ext) {
+          console.log('parse datachannel json cmd failed', e.data);
+        }
       });
 
       console.log("load appli success", this.larksr);
@@ -319,6 +337,10 @@ export default {
         } catch(e) {
           console.warn('parse aivoicedmresult failed', e.data);
         }
+      });
+
+      larksr.on('aivoiceerror', (e) => {
+        alert(JSON.stringify(e.data));
       });
 
       this.larksr = larksr;

@@ -49,6 +49,7 @@ yarn serve 执行成功后命令行显示如下：
 > 录音功能只支持 https 或者 localhost，不要打开 ip 开头的连接。
 
 ### 编译输出
+
 ```
 yarn build
 ```
@@ -81,3 +82,91 @@ larksr.connect({
     appliId: '要调试的appid，在系统后台查看',
 });
 ```
+
+### 智能语音相关接口
+
+#### Web 端
+
+> 参考 src/App.vue 下代码
+
+##### 打开麦克风并输入语音
+
+```javascript
+// 打开语音输入
+this.larksr.startAiDmVoiceInput();
+// 关闭语音输入
+this.larksr.stopAiDmVoiceInput();
+```
+
+##### 文字输入
+
+```javascript
+this.larksr.aiDmTextInput("文字输入");
+```
+
+##### 智能语音相关回调
+
+```javascript
+larksr.on('aivoicestatus', (e) => {
+  console.log('aivoicestatus', e);
+});
+
+larksr.on('aivoiceasrresult', (e) => {
+  console.log('aivoiceasrresult', e.data);
+});
+
+larksr.on('aivoicedmresult', (e) => {
+  try {
+    let res = JSON.parse(e.data.text);
+    console.log('aivoicedmresult', res);
+  } catch(e) {
+    console.warn('parse aivoicedmresult failed', e.data);
+  }
+});
+
+larksr.on('aivoiceerror', (e) => {
+  alert(JSON.stringify(e.data));
+});
+```
+
+#### 云端三维应用
+
+云端三维应用通过集成 LarkXRDataChannel64.dll 集成智能语音功能
+
+三维应用端只需处理智能语音输出的对话结果，具体智能语音处理过程在 LarkXR 内部完成。
+
+##### LarkXRAiVoice.h 
+
+开启智能语音功能并注册回调函数
+
+```c++
+LARKXR_API int  DC_CALL lr_client_register_aivoice_callback(on_aivoice_callback cb,void* user_data);
+```
+
+回调数据结构
+
+```c++
+struct AiVoicePacket
+{
+  bool	url;				//true :online audio url(mp3) .false: audio pack (pcm)
+  unsigned int voice_id;		//语音ID
+  const char* online_url;		//如果url为true,该字段为url地址,否则该字段为NULL 
+  int	    url_size;			//url长度 包含\0
+  const char* nlg;			//当前语音对讲的文本
+  int	    nlg_size;			//对讲文本长度 包含\0
+
+  //如果URL为false 那么下面字段描述每一个pcm包
+  unsigned int slice_id;		//一个语音分片ID
+  int		samples_per_sec;	//eg.16000
+  int		channels;		    //eg.1
+  const char* audio;			//数据包指针,如果 url 为true 该字段为空
+  int		size_byte;			//每一包的字节数
+  bool	last_packet;		//是否为最后一包
+};
+typedef void(*on_aivoice_callback)(struct AiVoicePacket* packet,void* user_data);
+```
+
+##### [Unity3D Demo 中集成并使用 LarkXRDataChannel64](./unity3d_demo/)
+
+[Unity3D Demo 文档](./unity3d_demo/README.md)
+
