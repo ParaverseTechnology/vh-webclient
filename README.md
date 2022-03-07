@@ -140,7 +140,7 @@ larksr.on('aivoiceerror', (e) => {
 
 ##### LarkXRAiVoice.h 
 
-开启智能语音功能并注册回调函数
+开启智能语音功能并注册回调函数,要注意在数据通道开启之后再启用智能语音功能
 
 ```c++
 LARKXR_API int  DC_CALL lr_client_register_aivoice_callback(on_aivoice_callback cb,void* user_data);

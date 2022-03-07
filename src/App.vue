@@ -22,7 +22,9 @@
         <!-- 输入文本 -->
         <div class="input">
           <!-- 录音按钮 -->
-          <div :class="recodeIconClass" @mousedown="startRecode" @mouseup="stopRecode" @mouseleave="stopRecode">
+          <div :class="recodeIconClass" 
+            @touchstart="startRecode" @touchend="stopRecode" @touchcancel="stopRecode" 
+            @mousedown="startRecode" @mouseup="stopRecode" @mouseleave="stopRecode">
             <font-awesome-icon :icon="['fas', 'microphone']" size="3x" />
           </div>
           <!-- 文本输入 -->
@@ -112,19 +114,22 @@ export default {
   },
   methods: {
     // 开始录制
-    startRecode() {
+    startRecode(e) {
       console.log('start recode');
+      e.preventDefault();
       if (this.meidaplaymute) {
         this.larksr?.videoComponent.sountPlayout();
         this.meidaplaymute = false;
       }
       this.larksr.startAiDmVoiceInput();
     },
-    stopRecode() {
+    stopRecode(e) {
       console.log('stop recode');
+      e.preventDefault();
       this.larksr.stopAiDmVoiceInput();
     },
     pauseRecode() {
+      console.log('pause recode');
       this.larksr.stopAiDmVoiceInput();
     },
     // 处理文字输入输出
@@ -251,9 +256,10 @@ export default {
           // serverAddress: "https://cloudlark.pingxingyun.com:8180/",
           // serverAddress: "http://222.128.6.137:8181/",
           serverAddress: "https://cloudlark.pingxingyun.com:8586/",
+          // serverAddress: "http://192.168.0.55:8181/",
           // serverAddress: "http://cloudlark.pingxingyun.com:8585",
           // SDK授权码，可在开发者平台申请 https://www.pingxingyun.com/console
-          authCode: "SDK授权码",
+          authCode: "SDK授权码，可在开发者平台申请 https://www.pingxingyun.com/console",
           // 视频缩放模式，默认保留宽高比，不会拉伸并完整显示在容器中
           scaleMode: "contain",
           // 0 -》 用户手动触发, 1 -》 首次点击进入触发, 2 -》 每次点击触发
@@ -261,12 +267,15 @@ export default {
           // 测试载入背景图
           loadingBgUrl: "https://home-obs.pingxingyun.com/homePage_4_0/bg.jpg",
           // logLevel: 'info',
+          frameRate: 60,
+          codeRate: 8000,
       });
-      console.log('larksr', larksr, LoadAppliParamsFromUrl());
+      // console.log('larksr', larksr, LoadAppliParamsFromUrl());
       // larksr.setAppliParams(LoadAppliParamsFromUrl());
       // larksr.start();
       larksr.connect({
          appliId: '949293606043123712',
+         // appliId: '948511483568848896',
       });
       // 监听连接成功事件
       larksr.on("connect", (e) => {
