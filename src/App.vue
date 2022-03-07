@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { LarkSR, LoadAppliParamsFromUrl } from "larksr_websdk";
+import { LarkSR } from "larksr_websdk";
 import Slider from './components/slider/slider.vue';
 
 const DataChannelType = {
@@ -276,6 +276,10 @@ export default {
       larksr.connect({
          appliId: '949293606043123712',
          // appliId: '948511483568848896',
+      })
+      .then(() => {})
+      .catch((e) => {
+        alert(JSON.stringify(e));
       });
       // 监听连接成功事件
       larksr.on("connect", (e) => {
