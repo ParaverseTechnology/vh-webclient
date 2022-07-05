@@ -5348,10 +5348,10 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   resolved "https://registry.nlark.com/kind-of/download/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha1-B8BQNKbDSfoG4k+jWqdttFgM5N0=
 
-larksr_websdk@^3.2.36:
-  version "3.2.36"
-  resolved "https://registry.yarnpkg.com/larksr_websdk/-/larksr_websdk-3.2.36.tgz#4758e3ab522d93dc0c68a41f9c5f8c9c42815645"
-  integrity sha512-QK5ccEEY6xhJgBPDvmdO3iD0k9gsbeUmSvnDPKfy9gMILjLYfhuMviGk56dhBcVggOhjmU53xjU/ggDySz6/6g==
+larksr_websdk@^3.2.38:
+  version "3.2.38"
+  resolved "https://registry.yarnpkg.com/larksr_websdk/-/larksr_websdk-3.2.38.tgz#61e2f419489ef1f5be8ff49708905f93df7d14be"
+  integrity sha512-Ex7VD7GXccx1y0ib9a0/ptjKjgJAMR6cuRGTkMtZMJAV/bIlNmUe+7z7guGctyqv09qk6KMnqcUsSAgmbxVrTg==
   dependencies:
     axios "^0.24.0"
     bowser "^2.11.0"
