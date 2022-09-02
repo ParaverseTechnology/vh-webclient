@@ -4828,6 +4828,11 @@ internal-slot@^1.0.3:
     has "^1.0.3"
     side-channel "^1.0.4"
 
+ios-inner-height@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/ios-inner-height/-/ios-inner-height-1.1.1.tgz#987c62350a04586b4025a21fa0e8bef054b7b64e"
+  integrity sha512-1/eCW+slv9Zm83Ugsq34dOU3QDzf/mcQQnOH0W8fLgvNKWYH3Kn8lod83K6JHDNWRgZCRJ1swFNiQrZqiJOiwA==
+
 ip-regex@^2.1.0:
   version "2.1.0"
   resolved "https://registry.nlark.com/ip-regex/download/ip-regex-2.1.0.tgz#fa78bf5d2e6913c911ce9f819ee5146bb6d844e9"
@@ -5348,15 +5353,16 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   resolved "https://registry.nlark.com/kind-of/download/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha1-B8BQNKbDSfoG4k+jWqdttFgM5N0=
 
-larksr_websdk@^3.2.38:
-  version "3.2.38"
-  resolved "https://registry.yarnpkg.com/larksr_websdk/-/larksr_websdk-3.2.38.tgz#61e2f419489ef1f5be8ff49708905f93df7d14be"
-  integrity sha512-Ex7VD7GXccx1y0ib9a0/ptjKjgJAMR6cuRGTkMtZMJAV/bIlNmUe+7z7guGctyqv09qk6KMnqcUsSAgmbxVrTg==
+larksr_websdk@^3.2.326:
+  version "3.2.326"
+  resolved "https://registry.yarnpkg.com/larksr_websdk/-/larksr_websdk-3.2.326.tgz#f1a7e8576d0a1e454e6bc90ff16f5f8346607e83"
+  integrity sha512-vtqkmG/73tiWD3XQDEFDOcOIZ7Jhb33mLkxz3dXHwxips/MCfqWREFJDqUDHg479XuLJjtHZCD7o6jTdkiPbPA==
   dependencies:
     axios "^0.24.0"
     bowser "^2.11.0"
     core-js "^3.18.1"
     crypto-js "^4.1.1"
+    ios-inner-height "^1.1.1"
     protobufjs "^6.11.2"
     webrtc-adapter "^8.1.0"
     weixin-js-sdk "^1.6.0"
