@@ -13,9 +13,10 @@
     "@fortawesome/free-solid-svg-icons": "^5.15.4",
     "@fortawesome/vue-fontawesome": "^3.0.0-5",
     "core-js": "^3.6.5",
-    "larksr_websdk": "^3.2.326",
+    "larksr_websdk": "^3.2.327",
     "vue": "^3.0.0",
-    "vuex": "^3.6.2"
+    "vuex": "^3.6.2",
+    "vconsole": "^3.14.6"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

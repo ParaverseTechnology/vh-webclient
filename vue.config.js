@@ -1,4 +1,4 @@
-const PUBLIC_GIT = false;
+const PUBLIC_GIT = true;
 // vue.config.js
 module.exports = {
     // 选项...
