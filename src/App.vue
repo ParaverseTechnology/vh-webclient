@@ -264,7 +264,7 @@ export default {
           // 如：http://222.128.6.137:8181/
           // serverAddress: "https://cloudlark.pingxingyun.com:8180/",
           // serverAddress: "http://222.128.6.137:8181/",
-          // serverAddress: "https://cloudlark.pingxingyun.com:8586/",
+          serverAddress: "https://cloudlark.pingxingyun.com:8586/",
           // serverAddress: "http://192.168.0.55:8181/",
           // serverAddress: "http://cloudlark.pingxingyun.com:8585",
           // SDK授权码，可在开发者平台申请 https://www.pingxingyun.com/console
@@ -361,26 +361,26 @@ export default {
       this.larksr = larksr;
 
       // try play video
-      document.addEventListener(
-        "WeixinJSBridgeReady",
-        () => {
-          console.warn("WeixinJSBridgeReady play video");
-          // WARNING
-          // 可能导致视频播放成功多次
-          larksr.videoComponent.playVideo();
-        },
-        false
-      );
+      // document.addEventListener(
+      //   "WeixinJSBridgeReady",
+      //   () => {
+      //     console.warn("WeixinJSBridgeReady play video");
+      //     // WARNING
+      //     // 可能导致视频播放成功多次
+      //     larksr.videoComponent.playVideo();
+      //   },
+      //   false
+      // );
 
-      if (window["WeixinJSBridge"]) {
-        console.warn("WeixinJSBridge exits; try play video",  window["WeixinJSBridge"]);
-        window["WeixinJSBridge"].ready(() => {
-          console.warn("WeixinJSBridge exits; play video", window["WeixinJSBridge"]);
-          larksr.videoComponent.playVideo();
-        });
-      } else {
-        console.warn("WeixinJSBridge empty", window["WeixinJSBridge"]);
-      }
+      // if (window["WeixinJSBridge"]) {
+      //   console.warn("WeixinJSBridge exits; try play video",  window["WeixinJSBridge"]);
+      //   window["WeixinJSBridge"].ready(() => {
+      //     console.warn("WeixinJSBridge exits; play video", window["WeixinJSBridge"]);
+      //     larksr.videoComponent.playVideo();
+      //   });
+      // } else {
+      //   console.warn("WeixinJSBridge empty", window["WeixinJSBridge"]);
+      // }
     },
     // 用户手动触发视频播放，可以添加合适的提示或者引导
     playVideo() {
@@ -393,6 +393,8 @@ export default {
     },
   },
   mounted() {
+    this.vconsole = new VConsole();
+
     // 直接 LarkSR 对象，避免某些浏览器中视频播放失败的问题
     // 服务器地址可以异步更新
     this.createLarkSR();
@@ -414,8 +416,6 @@ export default {
       });
 
     }, 1000 * 10);
-
-    this.vconsole = new VConsole();
   },
   beforeUnmount() {
     this.larksr.app.disConnect();
