@@ -1,0 +1,2 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d0c19b9"],{4788:function(n,t,c){"use strict";c.r(t);var u=function(){var n=this,t=n._self._c;return t("div",[n._v(" 用户协议 ")])},a=[],e={data(){return{}}},r=e,s=c("2877"),i=Object(s["a"])(r,u,a,!1,null,"1b407a6c",null);t["default"]=i.exports}}]);
+//# sourceMappingURL=chunk-2d0c19b9.a74f371d.js.map
