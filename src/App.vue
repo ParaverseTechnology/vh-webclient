@@ -1,5 +1,11 @@
 <template>
   <div ref="appContainer">
+    <div v-if="wait" style="position: absolute; z-index: 99999;">
+      <h1 style="color: red;">等待10S（这个不是倒计时）</h1>
+    </div>
+    <div v-else style="position: absolute; z-index: 99999;">
+      <button @click="playVideo">Play</button>
+    </div>
     <div class="ui" v-if="showUi">
       <!-- chat -->
       <div class="chat">
@@ -68,6 +74,7 @@
 <script>
 import { LarkSR } from "larksr_websdk";
 import Slider from './components/slider/slider.vue';
+import VConsole from "vconsole";
 
 const DataChannelType = {
   // 初始化配置，包括头发，⾐服，背景等。
@@ -90,6 +97,7 @@ export default {
   },
   data() {
     return {
+      wait: true,
       chatContent: [],
       larksr: null,
       inputValue: '',
@@ -105,6 +113,7 @@ export default {
         angle: 0
       },
       meidaplaymute: false,
+      vconsole: null,
     };
   },
   computed: {
@@ -246,10 +255,10 @@ export default {
             scale: 1 
           }
       }));
-    }
-  },
-  mounted() {
-     const larksr = new LarkSR({
+    },
+    createLarkSR() {
+      console.log("LarkSR ", this.$refs["appContainer"]);
+      const larksr = new LarkSR({
           rootElement: this.$refs["appContainer"],
           // 服务器地址,实际使用中填写您的服务器地址
           // 如：http://222.128.6.137:8181/
@@ -265,7 +274,7 @@ export default {
           // 0 -》 用户手动触发, 1 -》 首次点击进入触发, 2 -》 每次点击触发
           fullScreenMode: 0,
           // 测试载入背景图
-          loadingBgUrl: "https://home-obs.pingxingyun.com/homePage_4_0/bg.jpg",
+          // loadingBgUrl: "https://home-obs.pingxingyun.com/homePage_4_0/bg.jpg",
           // logLevel: 'info',
           frameRate: 60,
           codeRate: 8000,
@@ -273,14 +282,7 @@ export default {
       // console.log('larksr', larksr, LoadAppliParamsFromUrl());
       // larksr.setAppliParams(LoadAppliParamsFromUrl());
       // larksr.start();
-      larksr.connect({
-         appliId: '949293606043123712',
-         // appliId: '948511483568848896',
-      })
-      .then(() => {})
-      .catch((e) => {
-        alert(JSON.stringify(e));
-      });
+
       // 监听连接成功事件
       larksr.on("connect", (e) => {
         console.log("LarkSRClientEvent CONNECT", e);
@@ -357,10 +359,70 @@ export default {
       });
 
       this.larksr = larksr;
+
+      // try play video
+      // document.addEventListener(
+      //   "WeixinJSBridgeReady",
+      //   () => {
+      //     console.warn("WeixinJSBridgeReady play video");
+      //     // WARNING
+      //     // 可能导致视频播放成功多次
+      //     larksr.videoComponent.playVideo();
+      //   },
+      //   false
+      // );
+
+      // if (window["WeixinJSBridge"]) {
+      //   console.warn("WeixinJSBridge exits; try play video",  window["WeixinJSBridge"]);
+      //   window["WeixinJSBridge"].ready(() => {
+      //     console.warn("WeixinJSBridge exits; play video", window["WeixinJSBridge"]);
+      //     larksr.videoComponent.playVideo();
+      //   });
+      // } else {
+      //   console.warn("WeixinJSBridge empty", window["WeixinJSBridge"]);
+      // }
+    },
+    // 用户手动触发视频播放，可以添加合适的提示或者引导
+    playVideo() {
+      console.log('manu play out');
+      if (this.larksr) {
+        this.larksr.videoComponent.playVideo();
+      } else {
+        console.warn("lark sr not ready", this.larksr);
+      }
+    },
+  },
+  mounted() {
+    this.vconsole = new VConsole();
+
+    // 直接 LarkSR 对象，避免某些浏览器中视频播放失败的问题
+    // 服务器地址可以异步更新
+    this.createLarkSR();
+
+    // 此处演示异步更新服务器地址
+    window.setTimeout(() => {
+      this.wait = false;
+      
+      // 异步更新服务器地址并连接
+      this.larksr.updateServerAddress("https://cloudlark.pingxingyun.com:8586/");
+      
+      this.larksr.connect({
+         appliId: '949293606043123712',
+         // appliId: '948511483568848896',
+      })
+      .then(() => {})
+      .catch((e) => {
+        alert(JSON.stringify(e));
+      });
+
+    }, 1000 * 10);
   },
   beforeUnmount() {
     this.larksr.app.disConnect();
     this.larksr = null;
+    if (this.vconsole) {
+      this.vconsole.destroy();
+    }
   },
 };
 </script>
