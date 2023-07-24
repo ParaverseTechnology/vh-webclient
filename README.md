@@ -55,7 +55,7 @@ Browser Open http://localhost:8080/
 yarn build
 ```
 
-### 修改为本地调试环境
+### Change LarkSR config
 
 Open App.vue find line 237, change serverAddress, appliId. LarkSR cloud appid from LarkSR admin server.
 
