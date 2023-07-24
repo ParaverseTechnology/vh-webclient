@@ -15,7 +15,7 @@
 
 1. install nodejs v15.14.0
 
-[下载 v15.14.0](https://nodejs.org/download/release/v15.14.0/)
+[v15.14.0](https://nodejs.org/download/release/v15.14.0/)
 
 2. install yarn
 
